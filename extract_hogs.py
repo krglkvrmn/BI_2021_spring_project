@@ -14,17 +14,17 @@ args = parser.parse_args()
 X1_strength = {"A": "S", "D": "S", "E": "S", "G": "S", "H": "S", "I": "S",
                "K": "S", "P": "S", "Q": "S", "R": "S", "V": "S", "W": "S",
                "Y": "S", "F": "M", "M": "M", "N": "M", "C": "W", "L": "W",
-               "S": "W", "T": "W"}
+               "S": "W", "T": "W", "X": "W"}
 
 X2_strength = {"A": "S", "D": "S", "G": "S", "P": "S", "S": "M", "E": "M",
                "C": "W", "F": "W", "H": "W", "I": "W", "K": "W", "L": "W",
                "M": "W", "N": "W", "Q": "W", "R": "W", "T": "W", "V": "W",
-               "W": "W", "Y": "W"}
+               "W": "W", "Y": "W", "X": "W"}
 
 X3_strength = {"D": "S", "E": "S", "G": "S", "N": "S", "P": "S", "S": "S",
                "W": "S", "A": "M", "K": "M", "Q": "M", "T": "M", "C": "W",
                "F": "W", "H": "W", "I": "W", "L": "W", "M": "W", "R": "W",
-               "V": "W", "Y": "W"}
+               "V": "W", "Y": "W", "X": "W"}
 
 # N3_RULE[x1][x3]
 N3_RULE = {"S": {"S": "S", "M": "S", "W": "S"},
@@ -85,10 +85,10 @@ def write_into_hog(sequence, hog, taxid, motifs):
 def extract_hogs(path):
     hog_motif_status = defaultdict(bool)
     for idx, record in enumerate(SeqIO.parse(path, "fasta")):
-        if hog_search := re.search(r"HOG:\d+", record.description):
+        if hog_search := re.search(r"(HOG:\d+)", record.description):
             sequence = str(record.seq)
             strain = record.description.split(" | ")[0]
-            hog = hog_search.group()
+            hog = hog_search.group(1)
             matches = find_polyproline_motifs(sequence)
             motifs = []
             for motif, start, end in matches:
@@ -99,6 +99,7 @@ def extract_hogs(path):
         if not status:
             hog_filename = hog.replace(":", "") + ".fasta"
             os.remove(os.path.join(OUTPUT_DIR, hog_filename))
+
 
 if __name__ == "__main__":
     setup()
