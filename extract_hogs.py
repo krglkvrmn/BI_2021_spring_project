@@ -85,9 +85,11 @@ def write_into_hog(sequence, hog, taxid, motifs):
 def extract_hogs(path):
     hog_motif_status = defaultdict(bool)
     for idx, record in enumerate(SeqIO.parse(path, "fasta")):
-        if hog_search := re.search(r"(HOG:\d+)", record.description):
+        # r"(HOG:.+?)\s" for same IDs as in initial files
+        # r"(HOG:\d+)" for short IDs 
+        if hog_search := re.search(r"(HOG:.+?)\s", record.description):
             sequence = str(record.seq)
-            strain = record.description.split(" | ")[0]
+            strain = path.split("/")[-1].split(".")[0]
             hog = hog_search.group(1)
             matches = find_polyproline_motifs(sequence)
             motifs = []
