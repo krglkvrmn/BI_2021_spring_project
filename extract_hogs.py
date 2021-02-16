@@ -8,6 +8,8 @@ from Bio import SeqIO
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_files", nargs="+")
 parser.add_argument("-o", "--output_dir", default="HOGs")
+parser.add_argument("-g", "--group", default="HOG", choices=["HOG", "OMA"])
+parser.add_argument("--full_HOG", default=False, action="store_true")
 args = parser.parse_args()
 
 
@@ -73,30 +75,37 @@ def classify_motif(motif):
         return N2_RULE[x3s][x2s][x1s]
 
 
-def write_into_hog(sequence, hog, taxid, motifs):
+def write_into_hog(sequence, hog, taxid, motifs, prot_id):
     hog_filename = hog.replace(":", "")
     writable_motifs = map(lambda x: f"{x[0]}:{x[1]}:{x[2]}:{x[3]}", motifs)
     with open(f"{OUTPUT_DIR}/{hog_filename}.fasta", "a") as out_file:
-        description = f">{taxid} | {hog} | {' '.join(writable_motifs)}\n"
+        description = f">{prot_id} | {taxid} | {hog} | {' '.join(writable_motifs)}\n"
         out_file.write(description)
         out_file.write(f"{sequence}\n")
 
 
-def extract_hogs(path):
+def extract_hogs(path, args):
+    if args.group == "HOG" and args.full_HOG:
+        group_pattern = re.compile(r"(HOG:.+?)\s")
+    elif args.group == "HOG" and not args.full_HOG:
+        group_pattern = re.compile(r"(HOG:\d+)")
     hog_motif_status = defaultdict(bool)
     for idx, record in enumerate(SeqIO.parse(path, "fasta")):
         # r"(HOG:.+?)\s" for same IDs as in initial files
         # r"(HOG:\d+)" for short IDs 
-        if hog_search := re.search(r"(HOG:.+?)\s", record.description):
+        if hog_search := re.search(group_pattern, record.description):
             sequence = str(record.seq)
             strain = path.split("/")[-1].split(".")[0]
+            prot_id = record.description.split(" | ")[0]
             hog = hog_search.group(1)
             matches = find_polyproline_motifs(sequence)
             motifs = []
             for motif, start, end in matches:
                 motifs.append((motif, start, end, classify_motif(motif)))
             hog_motif_status[hog] |= bool(matches)
-            write_into_hog(sequence, hog, strain, motifs)
+            write_into_hog(sequence=sequence, hog=hog,
+                           taxid=strain, motifs=motifs,
+                           prot_id=prot_id)
     for hog, status in hog_motif_status.items():
         if not status:
             hog_filename = hog.replace(":", "") + ".fasta"
@@ -106,4 +115,4 @@ def extract_hogs(path):
 if __name__ == "__main__":
     setup()
     for filename in args.input_files:
-        extract_hogs(filename)
+        extract_hogs(filename, args)
