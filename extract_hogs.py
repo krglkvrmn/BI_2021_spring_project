@@ -9,7 +9,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_files", nargs="+")
 parser.add_argument("-o", "--output_dir", default="HOGs")
 parser.add_argument("-g", "--group", default="HOG", choices=["HOG", "OMA"])
+parser.add_argument("--oma-groups")
 parser.add_argument("--full_HOG", default=False, action="store_true")
+parser.add_argument("--incl-nonPP", default=False, action="store_true", help="Include groups withoud polyprolines in output")
 args = parser.parse_args()
 
 
@@ -84,10 +86,25 @@ def write_into_hog(sequence, hog, taxid, motifs, prot_id):
         out_file.write(f"{sequence}\n")
 
 
+def make_oma_index(path):
+    # 640 MB size
+    oma_index = {}
+    with open(path) as file_in:
+        for line in file_in:
+            if not line.startswith("#"):
+                oma_group, *oma_entries = line.strip().split()
+                for entry in oma_entries:
+                    oma_index[entry] = oma_group
+    return oma_index
+
+
 def extract_hogs(path, args):
     if args.group == "HOG" and args.full_HOG:
         group_pattern = re.compile(r"(HOG:.+?)\s")
     elif args.group == "HOG" and not args.full_HOG:
+        group_pattern = re.compile(r"(HOG:\d+)")
+    elif args.group == "OMA":
+        oma_index = make_oma_index(args.oma_groups)
         group_pattern = re.compile(r"(HOG:\d+)")
     hog_motif_status = defaultdict(bool)
     for idx, record in enumerate(SeqIO.parse(path, "fasta")):
@@ -97,7 +114,13 @@ def extract_hogs(path, args):
             sequence = str(record.seq)
             strain = path.split("/")[-1].split(".")[0]
             prot_id = record.description.split(" | ")[0]
-            hog = hog_search.group(1)
+            if args.group == "HOG":
+                hog = hog_search.group(1)
+            elif args.group == "OMA":
+                try:
+                    hog = oma_index[prot_id]
+                except KeyError:
+                    print(f"Protein {prot_id} has no OMA group")
             matches = find_polyproline_motifs(sequence)
             motifs = []
             for motif, start, end in matches:
@@ -106,10 +129,11 @@ def extract_hogs(path, args):
             write_into_hog(sequence=sequence, hog=hog,
                            taxid=strain, motifs=motifs,
                            prot_id=prot_id)
-    for hog, status in hog_motif_status.items():
-        if not status:
-            hog_filename = hog.replace(":", "") + ".fasta"
-            os.remove(os.path.join(OUTPUT_DIR, hog_filename))
+    if not args.incl_nonPP:
+        for hog, status in hog_motif_status.items():
+            if not status:
+                hog_filename = hog.replace(":", "") + ".fasta"
+                os.remove(os.path.join(OUTPUT_DIR, hog_filename))
 
 
 if __name__ == "__main__":
