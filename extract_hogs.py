@@ -3,6 +3,7 @@ import re
 import os
 from collections import defaultdict
 from Bio import SeqIO
+import pandas as pd
 
 
 parser = argparse.ArgumentParser()
@@ -129,14 +130,18 @@ def extract_hogs(path, args):
             write_into_hog(sequence=sequence, hog=hog,
                            taxid=strain, motifs=motifs,
                            prot_id=prot_id)
-    if not args.incl_nonPP:
-        for hog, status in hog_motif_status.items():
-            if not status:
-                hog_filename = hog.replace(":", "") + ".fasta"
-                os.remove(os.path.join(OUTPUT_DIR, hog_filename))
+    return hog_motif_status
 
 
 if __name__ == "__main__":
     setup()
+    hog_status = defaultdict(bool)
     for filename in args.input_files:
-        extract_hogs(filename, args)
+        hog_motif_status = extract_hogs(filename, args)
+        for hog, status in hog_motif_status.items():
+            hog_status[hog] |= status
+    if not args.incl_nonPP:
+        for hog, status in hog_status.items():
+            if not status:
+                hog_filename = hog.replace(":", "") + ".fasta"
+                os.remove(os.path.join(OUTPUT_DIR, hog_filename))
