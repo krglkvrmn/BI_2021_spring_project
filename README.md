@@ -169,7 +169,7 @@ optional arguments:
 It is assumed that **ecoli_proteome_data** directory contains fasta files with individual proteomes of 43 *Escherichia coli* strains. 
 
 ```
-python extract_og.py -i data/ecoli_proteome_data/* -o ecoli_OMAs_PP -g OMA --oma-groups oma-groups.txt
+python extract_og.py -i data/ecoli_proteome_data/* -o data/ecoli_OMAs_PP -g OMA --oma-groups oma-groups.txt
 ```
 
 ### Describing substitutions of proline (describe_substitutions.py)
@@ -197,7 +197,7 @@ optional arguments:
 **Example:**
 
 ```
-python describe_substitutions.py --output output_dir --threads 4
+python describe_substitutions.py --output data/output --threads 4
 ```
 
 ### Analysis of proline conservation (Analysis_OMA.ipynb)
