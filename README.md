@@ -32,7 +32,9 @@ Explore evolution of polyproline (PP-) motifs and their possible role in the for
 
 Scripts and analysis techniques, which were designed in the course of the project, might be applied to similar data of other types of organisms, e.g. eukaryotes and viruses.
 
-## Data description
+## Data descriptions
+
+Most of the data is not present in this repository due to large size. However, it can be downloaded with links below. Also there is toy dataset (**data/toy_dataset.tar.gz**), which allows you to test whole analysis pipeline on small data. All compressed files should be uncompressed before usage.
 
 ### Proteomes of *Escherichia coli* strains
 
@@ -54,7 +56,9 @@ Annotated reference proteome *Escherichia coli* (K-12 substr. MG1655) was downlo
 
 This step is performed using **extract_og.py** script.
 
-The script put proteins that are included in orthologous groups in different files representing that groups. In this project OMA groups with at least 1 protein having polyproline motif were selected. However **extract_og.py** allows other options.
+Input data is a list of fasta files containing proteomes of interest. Example dataset can be found in **data/toy_dataset.tar.gz**. 
+
+The script divides proteins that are included in orthologous groups into different files representing these groups. In this project OMA groups with at least 1 protein having polyproline motif were selected. However **extract_og.py** allows other options.
 
 The script also annotates polyproline motifs in the sequences, this includes start position, end position, motif stalling strength and motif sequence.
 
@@ -64,9 +68,36 @@ If there are more than one polyproline motifs, their entities are space-separate
 
 ### Describing substitutions of proline
 
-On this step **describe_substitutions.py** script is used. 
+On this step **describe_substitutions.py** script is used.
 
-At first it performs pairwise alignments for all proteins of each orthologous groups obtained on the previous step. Then pairwise alignments are used for counting substitutions of proline. The detailed example of this process is provided in the [presentation](docs/Presentation.html).
+Input data is a directory containing fasta files representing orthologous groups (output of **extract_og.py**).
+
+At first it performs pairwise alignments for all proteins of each orthologous group. Then pairwise alignments are used for counting substitutions of proline. The detailed example of this process is provided in the [presentation](https://krglkvrmn.github.io/BI_2021_spring_project/Presentation.html) (6th slide).
+
+Output is a directory containing TSV files with following structure:
+
+![](images/Describe_substitutions_output_example.png) 
+
+**Orthologous_group** is an orthologous group ID.
+
+**Reference_protein** is an ID of protein that was used as reference to count substitutions of proline.
+
+**Aligned_protein** is an ID of protein that was used to detect and count substitution and insertion events.
+
+**Region_type** is a class of region of interest:
+
+1. Single prolines (P with no adjacent prolines) aligned with any other residue.
+2. Motif prolines aligned with any other residues without insertions
+3. Motif prolines aligned with prolines with insertions in between
+4. Motif prolines with both insertions and substitutions.
+
+**Motif_num** is an index number of polyproline motif in sequence (0 for single prolines).
+
+**Proline_type**: "*m*" for "*Motif*" and "*s*" for "*Single*".
+
+**Event_type**: "*s*" for "*Substitution*" and "*i*" for "*Insertion*".
+
+**Substitutions** is an encoded numbers of proline substitutions to other amino acids in **aligned_protein** in comparison with **reference_protein**. For example, the second row in the table above tells us, that single prolines in *ECOCB01369* were substituted 1 time to *L*, 1 time to *T* and 20 times to *P* when comparing to *ECO4401216*. "*Prolines were substituted 20 time to P*" means that prolines were conserved.
 
 ### Analysis of proline conservation
 
@@ -114,7 +145,7 @@ Scripts were tested on **python 3.7.9** and **python 3.8.5**, notebooks were tes
 
 ### Dividing proteins into orthologous groups (extract_og.py)
 
-**oma-groups.txt** is required for this step. 
+**oma-groups.txt** is required for this step.
 
 ```
 extract_og.py [-h] [-i INPUT_FILES [INPUT_FILES ...]] [-o OUTPUT_DIR] [-g {HOG,OMA}] [--oma-groups OMA_GROUPS] [--full_HOG] [--incl-nonPP]
@@ -135,10 +166,10 @@ optional arguments:
 
 **Example:**
 
-It is assumed that **ecoli_proteome_data** directory contains fasta files with individual proteomes.
+It is assumed that **ecoli_proteome_data** directory contains fasta files with individual proteomes of 43 *Escherichia coli* strains. 
 
 ```
-python extract_og.py -i ecoli_proteome_data/* -o ecoli_OMAs_PP -g OMA --oma-groups oma-groups.txt
+python extract_og.py -i data/ecoli_proteome_data/* -o ecoli_OMAs_PP -g OMA --oma-groups oma-groups.txt
 ```
 
 ### Describing substitutions of proline (describe_substitutions.py)
@@ -184,3 +215,4 @@ jupyter notebook Structure_analysis.ipynb
 # or
 jupyter lab   # then select this notebook
 ```
+
