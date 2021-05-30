@@ -32,7 +32,7 @@ Explore evolution of polyproline (PP-) motifs and their possible role in the for
 
 Scripts and analysis techniques, which were designed in the course of the project, might be applied to similar data of other types of organisms, e.g. eukaryotes and viruses.
 
-## Data descriptions
+## Data description
 
 Most of the data is not present in this repository due to large size. However, it can be downloaded with links below. Also there is toy dataset (**data/toy_dataset.tar.gz**), which allows you to test whole analysis pipeline on small data. All compressed files should be uncompressed before usage.
 
