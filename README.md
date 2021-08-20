@@ -116,7 +116,7 @@ At this step analysis of polyproline motif locations was performed. This include
 ### Download source code and install dependencies
 
 ```
-git clone https://github.com/krglkvrmn/BI_2021_spring_project
+git clone git@github.com:krglkvrmn/BI_2021_spring_project.git
 cd BI_2021_spring_project
 pip install -r requirements.txt
 ```

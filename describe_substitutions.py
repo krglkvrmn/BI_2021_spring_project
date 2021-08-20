@@ -10,7 +10,7 @@ from typing import List, Union, Tuple, Match, TextIO, Generator
 from Bio import SeqIO
 from Bio import pairwise2
 from Bio.Seq import Seq
-from Bio.Align.substitution_matrices import load as load_matrix
+from Bio.SubsMat import MatrixInfo as matlist
 import pandas as pd
 from pandas import Series
 
@@ -27,7 +27,8 @@ class ProlineSubstitutionRecord:
         self.motif_num = motif_num
         self.subst_counts = substitution_counts
         self.seq_num = seq_num  # 0 - seqA, 1 - seqB
-        if type_ == "single": self.type_id = 1
+        if type_ == "single":
+            self.type_id = 1
         elif type_ == "motif_subst_only":
             self.type_id = 2
         elif type_ == "motif_subst_mixed":
@@ -107,7 +108,7 @@ def generate_all_best_pairwise_alignments(sequences: List[Seq]) -> Generator[Tup
     pairs of indices of sequences in these alignments. For each pair of sequence
     an alignment with the highest score are returned"""
     for pair, idx_pair in zip(combinations(sequences, 2), combinations(range(len(sequences)), 2)):
-        best_alignment = max(pairwise2.align.globalds(*pair, SUBST_MATRIX, -10, -0.5), key=lambda x: x[2])
+        best_alignment = max(pairwise2.align.globalds(*pair, matlist.blosum62, -10, -0.5), key=lambda x: x[2])
         yield best_alignment, idx_pair
 
 
@@ -225,13 +226,13 @@ def get_substitution_data(base_dir: str, file_set: List[str], worker_id: int, fi
     required"""
     for file_num, oma_group_file in enumerate(file_set):
         # Progress visualization
-        print(f"Worker {worker_id}: {file_num + 1}/{len(file_set)}")
+        print(f"Worker {worker_id}: {file_num + 1}/{len(file_set)}", oma_group_file)
         oma_group_id = oma_group_file.split(".")[0]
         oma_group_records = list(SeqIO.parse(os.path.join(base_dir, oma_group_file), "fasta"))
         descriptions, sequences = \
             list(map(lambda x: x.description, oma_group_records)), list(map(lambda x: x.seq, oma_group_records))
 
-        for alignment, seqs in generate_all_best_pairwise_alignments(sequences):
+        for algn_idx, (alignment, seqs) in enumerate(generate_all_best_pairwise_alignments(sequences)):
             if seqs[0] == seqs[1]:
                 continue
             seqA_id, _ = parse_description_and_motifs(descriptions[seqs[0]])
@@ -276,7 +277,6 @@ def set_up(arguments: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    SUBST_MATRIX = load_matrix("BLOSUM62")
     parser = argparse.ArgumentParser()
     parser.add_argument("oma_groups_dir", help="Path to directory containing fasta files which represent OMA groups")
     parser.add_argument("-o", "--output", required=True, help="Output directory")
